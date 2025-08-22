@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Luxury BMI Calculator</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;transition:0.3s;}
+body{height:100vh;font-family:'Poppins',sans-serif;display:flex;justify-content:center;align-items:center;background:#0f2027;overflow:hidden;position:relative;color:#fff;}
+canvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;}
+
+/* BMI Card */
+.bmi-container{
+    position:relative; z-index:1;
+    background:rgba(255,255,255,0.1);backdrop-filter:blur(20px);
+    border-radius:25px;padding:40px;width:380px;text-align:center;
+    box-shadow:0 15px 40px rgba(0,0,0,0.5); overflow:hidden;
+    animation: floatCard 6s ease-in-out infinite;
+}
+@keyframes floatCard{
+    0%{transform:translate(0,0) rotate(0deg);}
+    25%{transform:translate(5px,-10px) rotate(-1deg);}
+    50%{transform:translate(0,5px) rotate(0deg);}
+    75%{transform:translate(-5px,-5px) rotate(1deg);}
+    100%{transform:translate(0,0) rotate(0deg);}
+}
+.bmi-container::before{
+    content:'';
+    position:absolute; top:0; left:-75%; width:50%; height:100%;
+    background: linear-gradient(120deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.1) 100%);
+    transform:skewX(-20deg); pointer-events:none; z-index:2; border-radius:25px;
+    animation: shimmer 2.5s infinite;
+}
+@keyframes shimmer{0%{left:-75%;}100%{left:125%;}}
+
+h1{margin-bottom:30px;font-size:2em;font-weight:600;letter-spacing:1px;}
+input{width:80%;padding:15px;margin:12px 0;border-radius:12px;border:none;font-size:1em;background: rgba(255,255,255,0.2); color:#fff; text-align:center; outline:none;}
+input::placeholder{color:#eee;}
+button{padding:12px 25px;margin-top:15px;font-size:1.1em;border-radius:50px;border:none;cursor:pointer;background:linear-gradient(45deg,#ff6a00,#ee0979);color:#fff;font-weight:600;box-shadow:0 5px 25px rgba(0,0,0,0.4);}
+button:hover{transform:scale(1.05);}
+.result{margin-top:25px;font-size:1.4em;font-weight:500;padding:15px;border-radius:15px;background: rgba(255,255,255,0.1); box-shadow: inset 0 0 15px rgba(255,255,255,0.2);}
+
+/* Glow classes */
+.bmi-glow-yellow{box-shadow:0 0 30px 10px #ffc107,0 0 60px 20px #ffd54f;animation:pulse 1s ease-in-out 2;}
+.bmi-glow-green{box-shadow:0 0 30px 10px #28a745,0 0 60px 20px #5cd65c;animation:pulse 1s ease-in-out 2;}
+.bmi-glow-red{box-shadow:0 0 30px 10px #dc3545,0 0 60px 20px #ff6b6b;animation:pulse 1s ease-in-out 2;}
+.bmi-glow-blue{box-shadow:0 0 30px 10px #007bff,0 0 60px 20px #66b3ff;animation:pulse 1s ease-in-out 2;}
+@keyframes pulse{0%{transform:scale(1);}50%{transform:scale(1.03);}100%{transform:scale(1);}}
+
+.progress-container{width:100%;height:15px;border-radius:10px;background: rgba(255,255,255,0.2);margin-top:15px;overflow:hidden;position:relative;}
+.progress-bar{height:100%;width:0;border-radius:10px;transition: width 1s ease, box-shadow 0.5s ease;}
+@keyframes glowPulse{0%{box-shadow:0 0 5px rgba(255,255,255,0.3);}50%{box-shadow:0 0 15px rgba(255,255,255,0.7);}100%{box-shadow:0 0 5px rgba(255,255,255,0.3);}}
+
+.tooltip{position:absolute;top:-40px;left:50%;transform:translateX(-50%);padding:8px 12px;border-radius:8px;background: rgba(0,0,0,0.8);color:#fff;font-size:0.85em;opacity:0;pointer-events:none;transition:opacity 0.3s,top 0.3s;white-space:nowrap;}
+.progress-container:hover .tooltip{opacity:1;top:-50px;}
+
+.theme-toggle{position:absolute;top:20px;right:20px;width:60px;height:30px;background:#444;border-radius:30px;cursor:pointer;display:flex;align-items:center;padding:3px;z-index:2;}
+.theme-toggle .circle{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;transition:transform 0.3s, background 0.3s;background:#fff;color:#000;}
+
+body.light{background:#f5f5f5;color:#111;}
+body.light .bmi-container{background: rgba(255,255,255,0.9);color:#111;}
+body.light input{background: rgba(0,0,0,0.05);color:#111;}
+body.light input::placeholder{color:#555;}
+body.light .result{background: rgba(0,0,0,0.05);color:#111;box-shadow: inset 0 0 15px rgba(0,0,0,0.1);}
+body.light .theme-toggle{background:#ddd;}
+body.light .theme-toggle .circle{transform: translateX(30px);background:#111;color:#fff;}
+</style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+
+<div class="theme-toggle" onclick="toggleTheme()">
+  <div class="circle" id="toggleIcon">☀️</div>
+</div>
+
+<div class="bmi-container" id="bmiCard">
+<h1>BMI Calculator</h1>
+<input type="number" id="weight" placeholder="Weight (kg)">
+<input type="number" id="height" placeholder="Height (cm)">
+<br>
+<button onclick="calculateBMI()">Calculate</button>
+<div class="result" id="result"></div>
+<div class="progress-container">
+<div class="progress-bar" id="progressBar"></div>
+<div class="tooltip" id="tooltip">Your BMI info</div>
+</div>
+</div>
+
+<script>
+const canvas=document.getElementById('bg'); 
+const ctx=canvas.getContext('2d');
+canvas.width=window.innerWidth; 
+canvas.height=window.innerHeight;
+let particles=[], comets=[], stars=[], waveOffset=0;
+
+// Create particles for light/dark theme
+function createParticles(theme){
+    particles=[]; stars=[];
+    if(theme==='light'){
+        for(let i=0;i<150;i++){ 
+            particles.push({x:Math.random()*canvas.width,y:canvas.height+Math.random()*canvas.height,r:Math.random()*2+1,dy:-(Math.random()*0.3+0.2),dx:(Math.random()-0.5)*0.2,color:'rgba(255,215,0,'+(Math.random()*0.5+0.3)+')'}); 
+        }
+        for(let i=0;i<100;i++){ 
+            stars.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*1+0.5,opacity:Math.random(),dOpacity:Math.random()*0.02+0.01,color:'gold'}); 
+        }
+    } else {
+        for(let i=0;i<100;i++){ 
+            particles.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*2+1,dx:(Math.random()-0.5)*1,dy:(Math.random()-0.5)*1,color:'rgba(255,255,255,0.3)'}); 
+        }
+        for(let i=0;i<150;i++){ 
+            stars.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*1+0.5,opacity:Math.random(),dOpacity:Math.random()*0.02+0.01,color:'white'}); 
+        }
+    }
+}
+
+// Create comets for dark theme
+function createComets(){ 
+    comets=[]; 
+    for(let i=0;i<3;i++){ 
+        comets.push({x: Math.random()*canvas.width,y: Math.random()*canvas.height/2,length: Math.random()*100+50,speed: Math.random()*5+2,angle: Math.random()*0.3-0.15, trail:[]}); 
+    } 
+}
+
+// Draw comets
+function drawComets(){ 
+    for(let c of comets){ 
+        c.trail.push({x:c.x,y:c.y}); 
+        if(c.trail.length>20)c.trail.shift();
+        for(let i=0;i<c.trail.length-1;i++){let opacity=i/c.trail.length; ctx.beginPath(); ctx.moveTo(c.trail[i].x,c.trail[i].y); ctx.lineTo(c.trail[i+1].x,c.trail[i+1].y); ctx.strokeStyle=`rgba(255,255,255,${opacity})`; ctx.lineWidth=2; ctx.stroke(); }
+        c.x+=c.speed*Math.cos(c.angle); c.y+=c.speed*Math.sin(c.angle);
+        if(c.x>canvas.width+100||c.y>canvas.height+100){c.x=-50;c.y=Math.random()*canvas.height/2;c.trail=[];} 
+    } 
+}
+
+// Animate everything
+function animateParticles(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    if(document.body.classList.contains('light')){
+        // Light theme waves
+        let gradient=ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+        gradient.addColorStop(0,'#fff8e1'); gradient.addColorStop(0.5,'#ffe082'); gradient.addColorStop(1,'#fff3e0');
+        ctx.fillStyle=gradient; ctx.beginPath(); ctx.moveTo(0,canvas.height);
+        for(let x=0;x<=canvas.width;x+=10){ let y=canvas.height/2+Math.sin((x+waveOffset)*0.02)*30; ctx.lineTo(x,y);}
+        ctx.lineTo(canvas.width,canvas.height); ctx.closePath(); ctx.fill(); waveOffset+=2;
+    } else { drawComets(); }
+
+    // Draw stars
+    for(let s of stars){ 
+        ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2); 
+        ctx.fillStyle=s.color.replace(')',','+s.opacity+')').replace('rgb','rgba'); ctx.fill(); 
+        s.opacity+=s.dOpacity; if(s.opacity>1||s.opacity<0)s.dOpacity*=-1; 
+    }
+
+    // Draw particles
+    for(let p of particles){ 
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fillStyle=p.color; ctx.fill(); 
+        p.x+=p.dx; p.y+=p.dy; 
+        if(document.body.classList.contains('light')){
+            if(p.y<0){p.y=canvas.height;p.x=Math.random()*canvas.width;} 
+        } else{
+            if(p.x<0||p.x>canvas.width)p.dx*=-1; 
+            if(p.y<0||p.y>canvas.height)p.dy*=-1; 
+        }
+    }
+    requestAnimationFrame(animateParticles);
+}
+
+// Initialize
+createParticles('dark'); createComets(); animateParticles();
+window.addEventListener('resize',()=>{canvas.width=window.innerWidth; canvas.height=window.innerHeight;});
+
+// Theme toggle
+const toggleIcon=document.getElementById('toggleIcon');
+function toggleTheme(){
+    document.body.classList.toggle('light');
+    if(document.body.classList.contains('light')){
+        toggleIcon.innerHTML='🌙'; createParticles('light');
+    } else {
+        toggleIcon.innerHTML='☀️'; createParticles('dark'); createComets();
+    }
+}
+
+// BMI calculator
+function calculateBMI(){
+    let w=parseFloat(document.getElementById('weight').value);
+    let h=parseFloat(document.getElementById('height').value)/100;
+    if(!w||!h){alert('Enter valid weight and height'); return;}
+    let bmi=w/(h*h); let category='',glowClass='',tip='';
+    if(bmi<18.5){category="Underweight"; glowClass='bmi-glow-yellow'; tip="Eat healthy & maintain weight";}
+    else if(bmi<24.9){category="Normal"; glowClass='bmi-glow-green'; tip="Maintain healthy lifestyle";}
+    else if(bmi<29.9){category="Overweight"; glowClass='bmi-glow-red'; tip="Exercise & monitor diet";}
+    else{category="Very Overweight"; glowClass='bmi-glow-blue'; tip="Consult doctor & maintain habits";}
+
+    const color=(bmi<18.5?'#ffc107':bmi<24.9?'#28a745':bmi<29.9?'#dc3545':'#007bff');
+    const resultDiv=document.getElementById('result'); const card=document.getElementById('bmiCard');
+    const progressBar=document.getElementById('progressBar'); const tooltip=document.getElementById('tooltip');
+    card.className='bmi-container '+glowClass;
+    resultDiv.innerHTML=`BMI: <span style="color:${color}">${bmi.toFixed(2)}</span><br>Category: <span style="color:${color}">${category}</span>`;
+    let progressPercent=Math.min(Math.max((bmi-10)*100/30,0),100);
+    progressBar.style.background=color; progressBar.style.width='0%'; progressBar.style.animation='';
+    tooltip.innerText=tip;
+    setTimeout(()=>{ progressBar.style.width=progressPercent+'%'; progressBar.style.animation='glowPulse 1s infinite';},50);
+    setTimeout(()=>{ card.className='bmi-container';},1200);
+}
+</script>
+
+</body>
+</html>
